@@ -1,0 +1,52 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <include layout="@layout/toolbar_main" />
+
+    <android.support.v4.widget.DrawerLayout
+        android:id="@+id/drawerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="false" >
+
+        <FrameLayout
+            android:id="@+id/content_frame"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- navigation drawer -->
+
+        <LinearLayout
+            android:id="@+id/rl_menu"
+            android:layout_width="@dimen/nav_draw_width"
+            android:layout_height="match_parent"
+            android:layout_gravity="left|start"
+            android:background="@color/menuBg"
+            android:orientation="vertical" >
+
+            <ListView
+                android:id="@+id/left_drawer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:choiceMode="singleChoice"
+                android:divider="@android:color/transparent"
+                android:dividerHeight="10.0sp" />
+
+            <View
+                android:id="@+id/divider"
+                android:layout_width="fill_parent"
+                android:layout_height="1dp"
+                android:layout_marginBottom="@dimen/activity_vertical_half_margin"
+                android:layout_marginTop="@dimen/activity_vertical_half_margin"
+                android:background="@color/divider" />
+
+            <include
+                android:id="@+id/viewMenuExit"
+                layout="@layout/list_item_menu" />
+        </LinearLayout>
+    </android.support.v4.widget.DrawerLayout>
+
+</LinearLayout>
