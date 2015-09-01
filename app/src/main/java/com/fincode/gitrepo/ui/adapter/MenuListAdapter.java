@@ -36,7 +36,7 @@ public class MenuListAdapter extends BaseAdapter {
 		View view = convertView;
 		if (view == null) {
 			LayoutInflater inflater = mActivity.getLayoutInflater();
-			view = inflater.inflate(R.layout.list_item_menu, parent, false);
+			view = inflater.inflate(R.layout.row_menu, parent, false);
 			holder = new ViewHolder();
 			holder.imgIcon = (ImageView) view
 					.findViewById(R.id.imgMenuItemIcon);

@@ -1,10 +1,34 @@
 <resources>
 
-    <color name="black_overlay">#66000000</color>
+
+    <color name="secondary">@color/white</color>
+    <color name="secondaryDark">#ff611c4b</color>
     <color name="primary">#03A9F4</color>
+    <color name="primaryDark">#ff147165</color>
+    <color name="ternary">#ff3b3b3a</color>
+    <color name="accent">#448AFF</color>
+
+    <color name="primaryText">#de000000</color>
+    <color name="secondaryText">#8a000000</color>
+
+    <color name="white">#ffffff</color>
+    <color name="background_main">#0099cc</color>
+
+
+    <color name="fab_pressed">#303f9f</color>
+    <color name="fab_rippled">#ff80ab</color>
+    <color name="fab_normal">@color/primary</color>
+
+    <color name="transparent">#00000000</color>
+    <color name="txt_color_table">#424242</color>
+
+    <color name="drawer_header_bg">@color/secondary</color>
+    <color name="drawer_item_text_default">@color/secondaryText</color>
+    <color name="drawer_item_text_checked">@color/white</color>
+
+    <!--<color name="black_overlay">#66000000</color>
     <color name="primary_dark">#FF000000</color>
     <color name="primary_light">#B3E5FC</color>
-    <color name="accent">#448AFF</color>
     <color name="primary_text">#212121</color>
     <color name="secondary_text">#727272</color>
     <color name="icons">#FFFFFF</color>
@@ -35,7 +59,10 @@
     <color name="txt_color_table">#424242</color>
     <color name="transparent_middle">#33000000</color>
     <color name="transparent_light">#1A000000</color>
-    <color name="background_main">#0099cc</color>
+
+    <color name="drawer_header_bg">@color/secondary</color>
+    <color name="drawer_item_text_default">#bebebe</color>
+    <color name="drawer_item_text_checked">@color/primary</color> -->
 
     <!-- red -->
     <color name="md_red_50">#fde0dc</color>

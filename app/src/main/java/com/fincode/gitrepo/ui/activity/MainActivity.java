@@ -1,12 +1,13 @@
 package com.fincode.gitrepo.ui.activity;
 
-import java.util.List;
-
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -14,247 +15,234 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.fincode.gitrepo.App;
 import com.fincode.gitrepo.R;
+import com.fincode.gitrepo.ui.custom.CircleTransform;
 import com.fincode.gitrepo.ui.fragment.ReposFragment;
-import com.fincode.gitrepo.ui.adapter.MenuListAdapter;
-import com.fincode.gitrepo.ui.custom.Dialogs;
-import com.fincode.gitrepo.ui.custom.DrawerHelper;
-import com.fincode.gitrepo.ui.custom.ImageLoader;
-import com.fincode.gitrepo.model.enums.MenuItem;
+import com.fincode.gitrepo.ui.DialogsFabric;
 import com.fincode.gitrepo.model.User;
 import com.fincode.gitrepo.utils.Utils;
+import com.squareup.picasso.Picasso;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements
+        NavigationView.OnNavigationItemSelectedListener {
 
-	public static final String FRAGMENT_REPOS = "fragment_repos";
+    private static final long DRAWER_CLOSE_DELAY_MS = 150;
+    private static final String NAV_ITEM_ID = "navItemId";
 
-	private DrawerLayout mDrawerLayout;
-	private LinearLayout mRlMenu;
-	private ActionBarDrawerToggle mDrawerToggle;
-	private User mUser;
+    private final Handler mDrawerActionHandler = new Handler();
+    private DrawerLayout mDrawerLayout;
+    private ActionBarDrawerToggle mDrawerToggle;
+    private android.view.MenuItem mPreviousMenuItem;
+    private int mNavItemId;
 
 
-	public static long sBackPressed;
+    private LinearLayout mRlMenu;
+    private User mUser;
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
-		if (!initView()) {
-			Toast.makeText(this, getString(R.string.error_user_loading),
-					Toast.LENGTH_LONG).show();
-		}
-		initDrawer();
-		if (savedInstanceState == null) {
-			selectMenuItem(MenuItem.MENU_REPOSITORIES.ordinal());
-		}
-	}
 
-	// Инициализация хэдера меню
-	private void initMenuHeader(ListView listView) {
-		View header = getLayoutInflater().inflate(R.layout.menu_header,
-				listView, false);
-		TextView txtHeaderLogin = (TextView) header
-				.findViewById(R.id.txtMenuHeaderLogin);
-		txtHeaderLogin.setText(mUser.getLogin());
-		TextView txtHeaderName = (TextView) header
-				.findViewById(R.id.txtMenuHeaderName);
-		txtHeaderName.setText(mUser.getName());
-		ImageView imgHeaderProfile = (ImageView) header
-				.findViewById(R.id.imgMenuHeaderProfile);
-		ImageLoader imageLoader = new ImageLoader(getApplicationContext());
-		imageLoader.DisplayImage(mUser.getAvatar_url(), imgHeaderProfile, true);
-		listView.addHeaderView(header);
-	}
+    public static long sBackPressed;
 
-	// Инициализация представления
-	public boolean initView() {
-		mUser = Utils.GetUserInfo(this);
-		if (mUser == null || mUser.getLogin().isEmpty()
-				|| mUser.getPassword().isEmpty())
-			return false;
-		ListView leftDrawerList = (ListView) findViewById(R.id.left_drawer);
-		initMenuHeader(leftDrawerList);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        mUser = Utils.GetUserInfo(this);
+        if (userLoadingError()) {
+            Toast.makeText(this, getString(R.string.error_user_loading),
+                    Toast.LENGTH_LONG).show();
+        }
 
-		List<com.fincode.gitrepo.model.MenuItem> menuItems = DrawerHelper
-				.setMenuItems(MainActivity.this);
-		MenuListAdapter adapter = new MenuListAdapter(MainActivity.this,
-				menuItems);
-		leftDrawerList.setAdapter(adapter);
-		leftDrawerList.setOnItemClickListener(new DrawerItemClickListener());
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
-		mRlMenu = (LinearLayout) findViewById(R.id.rl_menu);
+        if (null == savedInstanceState) {
+            mNavItemId = R.id.drawer_item_repos;
+        } else {
+            mNavItemId = savedInstanceState.getInt(NAV_ITEM_ID);
+        }
 
-		ImageView imgExit = (ImageView) mRlMenu
-				.findViewById(R.id.imgMenuItemIcon);
-		View view = mRlMenu.findViewById(R.id.viewMenuExit);
-		view.setOnClickListener(v -> {
-				Utils.RemoveUserInfo(MainActivity.this);
-				Intent intent = new Intent(MainActivity.this,
-						LoginActivity.class);
-				startActivity(intent);
-				finish();
-		});
+        NavigationView navigationView = (NavigationView) findViewById(R.id.navigation);
+        navigationView.setNavigationItemSelectedListener(this);
+        initMenuHeader(navigationView);
 
-		imgExit.setImageResource(R.drawable.ic_logout);
-		TextView txtExit = (TextView) mRlMenu
-				.findViewById(R.id.txtMenuItemTitle);
-		txtExit.setText(getString(R.string.lbl_exit));
-		mDrawerLayout = (DrawerLayout) findViewById(R.id.drawerLayout);
-		mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow,
-				GravityCompat.START);
-		return true;
-	}
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, toolbar, R.string.drawer_open,
+                R.string.drawer_close);
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+        mDrawerToggle.syncState();
 
-	// Коллбэк выбора пункта меню
-	private class DrawerItemClickListener implements
-			ListView.OnItemClickListener {
-		@Override
-		public void onItemClick(AdapterView<?> parent, View view, int position,
-				long id) {
-			if (position > 0)
-				selectMenuItem(position - 1);
-		}
-	}
+        navigationView.getMenu().findItem(R.id.drawer_item_repos).setChecked(true);
+        mPreviousMenuItem = navigationView.getMenu().findItem(R.id.drawer_item_repos).setChecked(true);
+        navigate(mNavItemId);
+    }
 
-	// Переход к пункту меню
-	private void selectMenuItem(int position) {
-		Fragment fragment = null;
-		String tag = "";
-		FragmentManager fragmentManager = getSupportFragmentManager();
-		switch (MenuItem.values()[position]) {
-		case MENU_REPOSITORIES:
-			tag = FRAGMENT_REPOS;
-			Fragment f = fragmentManager.findFragmentByTag(tag);
-			fragment = (f != null && f instanceof ReposFragment) ? (ReposFragment) f
-					: new ReposFragment();
-			break;
+    private boolean userLoadingError() {
+        return mUser == null || mUser.getLogin().isEmpty()
+                || mUser.getPassword().isEmpty();
+    }
 
-		case MENU_SHOW_INFO:
-			showUserProfile();
-			break;
+    // Инициализация хэдера меню
+    private void initMenuHeader(NavigationView navigationView) {
+        View header = navigationView.inflateHeaderView(R.layout.drawer_header);
+        TextView txtHeaderLogin = (TextView) header
+                .findViewById(R.id.txt_menu_header_login);
+        txtHeaderLogin.setText(mUser.getLogin());
+        TextView txtHeaderName = (TextView) header
+                .findViewById(R.id.txt_menu_header_name);
+        txtHeaderName.setText(mUser.getName());
+        ImageView imgHeaderProfile = (ImageView) header
+                .findViewById(R.id.img_menu_header_profile);
 
-		case MENU_EXIT:
-			Utils.RemoveUserInfo(this);
-			Intent intent = new Intent(this, LoginActivity.class);
-			startActivity(intent);
-			finish();
-			break;
-		}
+        String url = mUser.getAvatar_url();
+        if (url != null && !url.isEmpty())
+            Picasso.with(App.inst()).load(url)
+                    .error(R.drawable.no_image)
+                    .placeholder(R.drawable.no_image)
+                    .transform(new CircleTransform(0))
+                    .into(imgHeaderProfile);
+    }
 
-		if (fragment != null) {
-			fragmentManager.beginTransaction()
-					.replace(R.id.content_frame, fragment, tag).commit();
-		}
+    private final static String FRAGMENT_REPOS = "repos";
 
-		mDrawerLayout.closeDrawer(mRlMenu);
-	}
+    // Переход к пункту меню
+    private void navigate(final int itemId) {
+        String tag = String.valueOf(itemId);
+        Fragment fragment = null;
+        switch (itemId) {
+            case R.id.drawer_item_repos:
+                tag = FRAGMENT_REPOS;
+                fragment = new ReposFragment();
+                break;
 
-	// Отображение информации о пользователе в диалоговом окне
-	private void showUserProfile() {
-		final MaterialDialog dialog = Dialogs.newInstanceEmptyDialog(this,
-				R.layout.dialog_userinfo);
-		View view = dialog.getCustomView();
-		ImageView imgProfile = (ImageView) view.findViewById(R.id.imgProfile);
+            case R.id.drawer_item_profile:
+                showUserProfile();
+                return;
 
-		ImageLoader imageLoader = new ImageLoader(getApplicationContext());
-		imageLoader.DisplayImage(mUser.getAvatar_url(), imgProfile, false);
+            case R.id.drawer_item_logout:
+                Utils.RemoveUserInfo(this);
+                Intent intent = new Intent(this, LoginActivity.class);
+                startActivity(intent);
+                finish();
+                return;
+        }
 
-		TextView txtLogin = (TextView) view.findViewById(R.id.txtProfileLogin);
-		txtLogin.setText(mUser.getLogin());
+        Fragment buf = getSupportFragmentManager().findFragmentByTag(tag);
+        if (buf != null)
+            fragment = buf;
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.replace(R.id.content_main, fragment, tag);
+        ft.addToBackStack(tag);
+        ft.commit();
+    }
 
-		TextView txtName = (TextView) view.findViewById(R.id.txtProfileName);
-		txtName.setText(String.format("Имя: %s", mUser.getName()));
+    // Отображение информации о пользователе в диалоговом окне
+    private void showUserProfile() {
+        final MaterialDialog dialog = DialogsFabric.newInstanceEmptyDialog(this,
+                R.layout.dialog_userinfo);
+        View view = dialog.getCustomView();
+        ImageView imgProfile = (ImageView) view.findViewById(R.id.imgProfile);
 
-		TextView txtEmail = (TextView) view.findViewById(R.id.txtProfileEmail);
-		txtEmail.setText(String.format("Email: %s", mUser.getEmail()));
+        String url = mUser.getAvatar_url();
+        if (url != null && !url.isEmpty())
+            Picasso.with(App.inst()).load(url)
+                    .error(R.drawable.no_image)
+                    .placeholder(R.drawable.no_image)
+                    .transform(new CircleTransform(1))
+                    .into(imgProfile);
 
-		TextView txtFollowing = (TextView) view
-				.findViewById(R.id.txtProfileFollowing);
-		txtFollowing.setText(String.format("Подписок: %s",
-				String.valueOf(mUser.getFollowing())));
+        TextView txtLogin = (TextView) view.findViewById(R.id.txtProfileLogin);
+        txtLogin.setText(mUser.getLogin());
 
-		TextView txtFollowers = (TextView) view
-				.findViewById(R.id.txtProfileFollowers);
-		txtFollowers.setText(String.format("Подписчиков: %s",
-				String.valueOf(mUser.getFollowers())));
+        TextView txtName = (TextView) view.findViewById(R.id.txtProfileName);
+        txtName.setText(String.format("Имя: %s", mUser.getName()));
 
-		TextView txtPublicRepos = (TextView) view
-				.findViewById(R.id.txtProfilePublicRepos);
-		txtPublicRepos.setText(String.format("Открытых репозиториев: %s",
-				String.valueOf(mUser.getPublic_repos())));
-		dialog.show();
-	}
+        TextView txtEmail = (TextView) view.findViewById(R.id.txtProfileEmail);
+        txtEmail.setText(String.format("Email: %s", mUser.getEmail()));
 
-	@Override
-	public void setTitle(CharSequence title) {
-		getSupportActionBar().setTitle(title);
-	}
+        TextView txtFollowing = (TextView) view
+                .findViewById(R.id.txtProfileFollowing);
+        txtFollowing.setText(String.format("Подписок: %s",
+                String.valueOf(mUser.getFollowing())));
 
-	// Инициализация туллбара
-	private void initDrawer() {
-		Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-		if (toolbar != null) {
-			setSupportActionBar(toolbar);
-		}
-		mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, toolbar,
-				R.string.drawer_open, R.string.drawer_close) {
-			@Override
-			public void onDrawerClosed(View drawerView) {
-				super.onDrawerClosed(drawerView);
-			}
+        TextView txtFollowers = (TextView) view
+                .findViewById(R.id.txtProfileFollowers);
+        txtFollowers.setText(String.format("Подписчиков: %s",
+                String.valueOf(mUser.getFollowers())));
 
-			@Override
-			public void onDrawerOpened(View drawerView) {
-				super.onDrawerOpened(drawerView);
-			}
-		};
-		mDrawerLayout.setDrawerListener(mDrawerToggle);
-	}
+        TextView txtPublicRepos = (TextView) view
+                .findViewById(R.id.txtProfilePublicRepos);
+        txtPublicRepos.setText(String.format("Открытых репозиториев: %s",
+                String.valueOf(mUser.getPublic_repos())));
+        dialog.show();
+    }
 
-	@Override
-	protected void onPostCreate(Bundle savedInstanceState) {
-		super.onPostCreate(savedInstanceState);
-		mDrawerToggle.syncState();
-	}
+    @Override
+    public void setTitle(CharSequence title) {
+        getSupportActionBar().setTitle(title);
+    }
 
-	@Override
-	public void onConfigurationChanged(Configuration newConfig) {
-		super.onConfigurationChanged(newConfig);
-		mDrawerToggle.onConfigurationChanged(newConfig);
-	}
+    @Override
+    public boolean onNavigationItemSelected(final android.view.MenuItem menuItem) {
+        if (mPreviousMenuItem != menuItem) {
+            if (menuItem.getItemId() != R.id.drawer_item_profile) {
+                menuItem.setChecked(true);
+                if (mPreviousMenuItem != null) {
+                    mPreviousMenuItem.setChecked(false);
+                }
+                mPreviousMenuItem = menuItem;
+                mNavItemId = menuItem.getItemId();
+            }
+            mDrawerLayout.closeDrawer(GravityCompat.START);
+            mDrawerActionHandler.postDelayed(() -> navigate(menuItem.getItemId()), DRAWER_CLOSE_DELAY_MS);
+        }
+        return true;
+    }
 
-	@Override
-	public boolean onOptionsItemSelected(android.view.MenuItem item) {
-		if (mDrawerToggle.onOptionsItemSelected(item)) {
-			return true;
-		}
-		return super.onOptionsItemSelected(item);
-	}
+    @Override
+    public void onConfigurationChanged(final Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        mDrawerToggle.onConfigurationChanged(newConfig);
+    }
 
-	@Override
-	public void onBackPressed() {
-		if (mDrawerLayout.isDrawerOpen(Gravity.LEFT)) {
-			mDrawerLayout.closeDrawers();
-			return;
-		}
-		if (sBackPressed + 2000 > System.currentTimeMillis()) {
-			super.onBackPressed();
-			ImageLoader imgLoader = new ImageLoader(this);
-			imgLoader.clearCache();
-			android.os.Process.killProcess(android.os.Process.myPid());
-		} else
-			Toast.makeText(MainActivity.this, R.string.press_back_for_exit,
-					Toast.LENGTH_SHORT).show();
-		sBackPressed = System.currentTimeMillis();
-	}
+    @Override
+    public boolean onOptionsItemSelected(final android.view.MenuItem item) {
+        if (item.getItemId() == android.support.v7.appcompat.R.id.home) {
+            return mDrawerToggle.onOptionsItemSelected(item);
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (mDrawerLayout.isDrawerOpen(Gravity.LEFT)) {
+            mDrawerLayout.closeDrawers();
+            return;
+        }
+        if (sBackPressed + 2000 > System.currentTimeMillis()) {
+            super.onBackPressed();
+            android.os.Process.killProcess(android.os.Process.myPid());
+        } else
+            Toast.makeText(MainActivity.this, R.string.press_back_for_exit,
+                    Toast.LENGTH_SHORT).show();
+        sBackPressed = System.currentTimeMillis();
+    }
+
+    @Override
+    protected void onSaveInstanceState(final Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(NAV_ITEM_ID, mNavItemId);
+    }
+
+    public static void startActivity(Context context) {
+        Intent intent = new Intent(context, MainActivity.class);
+        context.startActivity(intent);
+    }
 
 }

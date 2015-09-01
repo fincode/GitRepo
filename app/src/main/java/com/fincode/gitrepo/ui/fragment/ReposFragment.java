@@ -26,27 +26,19 @@ import com.fincode.gitrepo.R;
 import com.fincode.gitrepo.model.Repository;
 import com.fincode.gitrepo.model.Status;
 import com.fincode.gitrepo.model.User;
-import com.fincode.gitrepo.model.enums.MethodName;
 import com.fincode.gitrepo.model.enums.StatusCode;
 import com.fincode.gitrepo.network.ServerCommunicator;
-import com.fincode.gitrepo.service.WebAsync;
 import com.fincode.gitrepo.ui.activity.CommitsActivity;
 import com.fincode.gitrepo.ui.adapter.RepositoriesTableAdapter;
 import com.fincode.gitrepo.utils.Utils;
-import com.joanzapata.android.asyncservice.api.annotation.InjectService;
-import com.joanzapata.android.asyncservice.api.annotation.OnMessage;
-import com.joanzapata.android.asyncservice.api.internal.AsyncService;
 import com.melnykov.fab.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
-
-import static com.joanzapata.android.asyncservice.api.annotation.OnMessage.Sender.ALL;
 
 // Фрагмент, отображающий список репозиториев
 public class ReposFragment extends Fragment {
@@ -132,7 +124,7 @@ public class ReposFragment extends Fragment {
     // Инициализация хэдера таблицы
     private void initTableHeader() {
         View header = mActivity.getLayoutInflater().inflate(
-                R.layout.list_item_repositories, mLvRepositories, false);
+                R.layout.row_repositories, mLvRepositories, false);
         header.findViewById(R.id.imgRepositorieAvatar).setVisibility(View.GONE);
         TextView txtDescription = (TextView) header
                 .findViewById(R.id.txtRepositorieDescription);

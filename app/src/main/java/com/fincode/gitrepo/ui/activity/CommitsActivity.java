@@ -9,7 +9,6 @@ import android.widget.LinearLayout.LayoutParams;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.fincode.gitrepo.App;
 import com.fincode.gitrepo.R;
@@ -17,21 +16,15 @@ import com.fincode.gitrepo.model.Commit;
 import com.fincode.gitrepo.model.Repository;
 import com.fincode.gitrepo.model.Status;
 import com.fincode.gitrepo.model.User;
-import com.fincode.gitrepo.model.enums.MethodName;
 import com.fincode.gitrepo.model.enums.StatusCode;
 import com.fincode.gitrepo.network.ServerCommunicator;
-import com.fincode.gitrepo.service.WebAsync;
 import com.fincode.gitrepo.ui.adapter.CommitsTableAdapter;
 import com.fincode.gitrepo.utils.Utils;
-import com.joanzapata.android.asyncservice.api.annotation.InjectService;
-import com.joanzapata.android.asyncservice.api.annotation.OnMessage;
-import com.joanzapata.android.asyncservice.api.internal.AsyncService;
 import com.melnykov.fab.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -93,7 +86,7 @@ public class CommitsActivity extends Activity {
     // Инициализация заголовка таблицы
     private void initTableHeader() {
         View header = getLayoutInflater().inflate(
-                R.layout.list_item_repositories, mLvCommits, false);
+                R.layout.row_repositories, mLvCommits, false);
         ImageView img = (ImageView) header
                 .findViewById(R.id.imgRepositorieAvatar);
         img.setVisibility(View.GONE);

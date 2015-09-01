@@ -1,0 +1,21 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:id="@+id/drawer_group_main">
+        <item
+            android:id="@+id/drawer_item_repos"
+            android:checkable="true"
+            android:icon="@drawable/ic_repo"
+            android:title="@string/lbl_repositories" />
+        <item
+            android:id="@+id/drawer_item_profile"
+            android:checkable="false"
+            android:icon="@drawable/ic_profile"
+            android:title="@string/lbl_user_info" />
+    </group>
+    <group android:id="@+id/drawer_group_second">
+        <item
+            android:id="@+id/drawer_item_logout"
+            android:checkable="true"
+            android:icon="@drawable/ic_logout"
+            android:title="@string/lbl_exit" />
+    </group>
+</menu>

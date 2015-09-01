@@ -57,7 +57,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/activity_vertical_half_margin"
-            android:background="@color/primaryColor"
+            android:background="@color/primary"
             android:enabled="false"
             android:text="@string/lbl_enter"
             android:textColor="@color/button" />

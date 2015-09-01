@@ -1,4 +1,4 @@
-package com.fincode.gitrepo.ui.custom;
+package com.fincode.gitrepo.ui;
 
 import android.content.Context;
 
@@ -6,7 +6,7 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.fincode.gitrepo.R;
 
 
-public class Dialogs {
+public class DialogsFabric {
 
 	// Создания экземпляра пустого диалогового окна
 	public static MaterialDialog newInstanceEmptyDialog(final Context context,

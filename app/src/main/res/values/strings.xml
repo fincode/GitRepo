@@ -1,35 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="app_name">GitRepo</string>
+    
     <string name="lbl_enter">Войти</string>
     <string name="lbl_logo">Логотип</string>
     <string name="lbl_username">Логин</string>
     <string name="lbl_password">Пароль</string>
-    <string name="lbl_save_password">Сохранить пароль</string>
-    <string name="press_back_for_exit">Нажмите кнопку \'Назад\' еще раз для выхода из приложения</string>
-    <string name="title_activity_repos">Список репозиториев</string>
     <string name="lbl_icon">Иконка</string>
-    <string name="drawer_open">Открыть меню</string>
-    <string name="drawer_close">Закрыть меню</string>
-    <string name="error_user_loading">Произошла ошибка при загрузке пользователя</string>
-    <string name="error_internet_access">Отсутствует подключение к интернету</string>
-    <string name="error_server_unavailable">Сервер не отвечает</string>
+    <string name="lbl_save_password">Сохранить пароль</string>
     <string name="lbl_avatar">Аватар</string>
-    <string name="error_wrong_login_or_pass">Неверный логин или пароль</string>
-    <string name="error_parse_response">Ошибка при парсинге ответа от сервера</string>
-    <string name="error_unknown">Неизвестная ошибка</string>
-    <string name="error_server_not_response">Сервер не отвечает</string>
-    <string name="repositories_list">Список репозиториев</string>
-    <string name="repositories_loading">Идет загрузка репозиториев&#8230;</string>
-    <string name="title_repository_info">Список коммитов</string>
-    <string name="error_loading_login_pass">Произошла ошибка при чтении логина/пароля</string>
     <string name="lbl_user_info">Просмотр профиля</string>
     <string name="lbl_repositories">Список репозиториев</string>
     <string name="lbl_exit">Выйти</string>
-    <string name="error_save_user">Возникла ошибка при сохранениии пользователя</string>
-    <string name="error_bad_request">Совершён неправильный запрос к серверу</string>
-    <string name="error_undefined_repo_name">Не удалось получить имя репозитория</string>
     <string name="lbl_hash">Hash</string>
     <string name="lbl_commit">Commit message</string>
     <string name="lbl_author">Автор</string>
@@ -39,7 +21,6 @@
     <string name="lbl_login">"Логин "</string>
     <string name="lbl_watchers">Watchers</string>
     <string name="lbl_forks">Forks</string>
-    <string name="error_internal_bad_data">Произошла внутренняя ошибка чтения параметров</string>
     <string name="lbl_commits_loading">Идет загрузка коммитов&#8230;</string>
     <string name="lbl_private">Приватный</string>
     <string name="lbl_repository_name">Имя репозитория</string>
@@ -47,8 +28,29 @@
     <string name="lbl_create">Создать</string>
     <string name="lbl_cancel">Отмена</string>
     <string name="lbl_repo_create_success">Репозиторий успешно создан</string>
-    <string name="error_repo_create">Произошла ошибка при создании репозитория</string>
     <string name="lbl_create_repo">Создать репозиторий</string>
+
+    <string name="repositories_list">Список репозиториев</string>
+    <string name="repositories_loading">Идет загрузка репозиториев&#8230;</string>
+    <string name="title_repository_info">Список коммитов</string>
+    <string name="press_back_for_exit">Нажмите кнопку \'Назад\' еще раз для выхода из приложения</string>
+    <string name="title_activity_repos">Список репозиториев</string>
+    <string name="drawer_open">Открыть меню</string>
+    <string name="drawer_close">Закрыть меню</string>
+
+    <string name="error_user_loading">Произошла ошибка при загрузке пользователя</string>
+    <string name="error_internet_access">Отсутствует подключение к интернету</string>
+    <string name="error_server_unavailable">Сервер не отвечает</string>
+    <string name="error_wrong_login_or_pass">Неверный логин или пароль</string>
+    <string name="error_parse_response">Ошибка при парсинге ответа от сервера</string>
+    <string name="error_unknown">Неизвестная ошибка</string>
+    <string name="error_server_not_response">Сервер не отвечает</string>
+    <string name="error_loading_login_pass">Произошла ошибка при чтении логина/пароля</string>
+    <string name="error_save_user">Возникла ошибка при сохранениии пользователя</string>
+    <string name="error_bad_request">Совершён неправильный запрос к серверу</string>
+    <string name="error_undefined_repo_name">Не удалось получить имя репозитория</string>
+    <string name="error_internal_bad_data">Произошла внутренняя ошибка чтения параметров</string>
+    <string name="error_repo_create">Произошла ошибка при создании репозитория</string>
     <string name="error_repositorie_exist">Репозиторий с таким именем уже существует</string>
     <string name="error_empty_repositorie">Этот репозиторий пуст</string>
     <string name="error_cert">Ошибка сертификата. Возможно у Вас неверно настроено системное время</string>

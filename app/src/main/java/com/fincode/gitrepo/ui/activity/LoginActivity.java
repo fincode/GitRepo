@@ -136,10 +136,8 @@ public class LoginActivity extends Activity {
         user.setPassword(mTxtPassword.getText().toString());
         // Сохранение данных о пользователе
         if (Utils.SaveUser(LoginActivity.this, user)) {
-            Intent intent = new Intent(LoginActivity.this,
-                    MainActivity.class);
             pdLoading.dismiss();
-            startActivity(intent);
+            MainActivity.startActivity(this);
             finish();
             return;
         } else

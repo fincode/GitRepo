@@ -43,7 +43,7 @@ public class CommitsTableAdapter extends BaseAdapter {
 		View view = convertView;
 		if (view == null) {
 			LayoutInflater inflater = mActivity.getLayoutInflater();
-			view = inflater.inflate(R.layout.list_item_repositories, parent,
+			view = inflater.inflate(R.layout.row_repositories, parent,
 					false);
 			holder = new ViewHolder();
 			view.findViewById(R.id.imgRepositorieAvatar).setVisibility(
