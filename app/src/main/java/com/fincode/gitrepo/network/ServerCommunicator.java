@@ -27,6 +27,7 @@ import retrofit.client.Client;
 import retrofit.client.OkClient;
 import retrofit.client.Request;
 import retrofit.client.Response;
+import rx.Observable;
 
 public class ServerCommunicator {
     private static final String LOG_TAG = "ServerCommunicator";
@@ -72,29 +73,25 @@ public class ServerCommunicator {
     }
 
     // Авторизация пользователя
-    public User Auth(User user) throws SSLHandshakeException, UnauthorizedException,
-            SocketTimeoutException, BadRequestException, NoConnectivityException  {
+    public Observable<User> auth(User user)   {
         String auth = encodeCredentialsForBasicAuthorization(user);
         return gitHubService.getUserProfile(auth, user.getLogin());
     }
 
     // Получение списка репозиториев
-    public List<Repository> GetRepos(User user) throws SSLHandshakeException, UnauthorizedException,
-            SocketTimeoutException, BadRequestException, NoConnectivityException {
+    public Observable<List<Repository>> getRepos(User user) {
         String auth = encodeCredentialsForBasicAuthorization(user);
         return gitHubService.getRepositories(auth);
     }
 
     // Создание репозитория
-    public Repository CreateRepo(User user, Repository repo) throws SSLHandshakeException, UnauthorizedException,
-            SocketTimeoutException, BadRequestException, NoConnectivityException, AlreadyExistException {
+    public Observable<Repository> createRepo(User user, Repository repo) {
         String auth = encodeCredentialsForBasicAuthorization(user);
         return gitHubService.createRepo(auth, repo);
     }
 
     // Получение списка коммитов
-    public List<Commit> GetCommits(User user, Repository repo) throws SSLHandshakeException, UnauthorizedException,
-            SocketTimeoutException, BadRequestException, EmptyRepositoryException, NoConnectivityException  {
+    public Observable<List<Commit>> getCommits(User user, Repository repo) {
         String auth = encodeCredentialsForBasicAuthorization(user);
         return gitHubService.getCommits(auth, repo.getOwner().getLogin(), repo.getName());
     }

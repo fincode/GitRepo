@@ -1,8 +1,9 @@
-package com.fincode.gitrepo.ui;
+package com.fincode.gitrepo.ui.fragment;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -20,13 +21,16 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.fincode.gitrepo.App;
 import com.fincode.gitrepo.R;
 import com.fincode.gitrepo.model.Repository;
 import com.fincode.gitrepo.model.Status;
 import com.fincode.gitrepo.model.User;
 import com.fincode.gitrepo.model.enums.MethodName;
 import com.fincode.gitrepo.model.enums.StatusCode;
+import com.fincode.gitrepo.network.ServerCommunicator;
 import com.fincode.gitrepo.service.WebAsync;
+import com.fincode.gitrepo.ui.activity.CommitsActivity;
 import com.fincode.gitrepo.ui.adapter.RepositoriesTableAdapter;
 import com.fincode.gitrepo.utils.Utils;
 import com.joanzapata.android.asyncservice.api.annotation.InjectService;
@@ -37,12 +41,18 @@ import com.melnykov.fab.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
 
+import rx.Observable;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
+
 import static com.joanzapata.android.asyncservice.api.annotation.OnMessage.Sender.ALL;
 
 // Фрагмент, отображающий список репозиториев
 public class ReposFragment extends Fragment {
 
-    private List<Repository> mRepositories;
+    private List<Repository> mRepositories = new ArrayList<>();
+    RepositoriesTableAdapter mReposAdapter;
     private Activity mActivity;
 
     private LinearLayout mLlLoading;
@@ -53,10 +63,8 @@ public class ReposFragment extends Fragment {
     private FloatingActionButton mFabCreateRepo;
 
 
-    @InjectService
-    WebAsync webAsync;
-
     public static final String EXTRA_REPOSITORIES = "extra_repositories";
+
 
     public ReposFragment() {
     }
@@ -64,7 +72,6 @@ public class ReposFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        AsyncService.inject(this);
 
         View rootView = inflater.inflate(R.layout.fragment_repos, container,
                 false);
@@ -90,31 +97,29 @@ public class ReposFragment extends Fragment {
                     .getOwner().getLogin());
             startActivity(intent);
         });
-
         // Инициализация кнопки создания репозитория
         mFabCreateRepo = (FloatingActionButton) rootView.findViewById(R.id.fab);
         mFabCreateRepo.attachToListView(mLvRepositories);
         mFabCreateRepo.setOnClickListener(v -> openCreateDialog());
         initTableHeader();
-        if (savedInstanceState == null) {
-            Status status = new Status(StatusCode.LOADING,
-                    getString(R.string.repositories_loading));
-            updateGUI(status);
-            refreshRepositories();
-        } else {
-            mRepositories = savedInstanceState
-                    .getParcelableArrayList(EXTRA_REPOSITORIES);
-            updateGUI(new Status(StatusCode.SUCCESS, null));
-        }
+        mReposAdapter = new RepositoriesTableAdapter(
+                mActivity, mRepositories);
+        mLvRepositories.setAdapter(mReposAdapter);
+
         return rootView;
     }
 
     @Override
-    public void onDestroy() {
-        AsyncService.unregister(this);
-        super.onDestroy();
-    }
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        if (savedInstanceState == null) {
+            fetchRepositories();
+        } else {
+            refreshReposList(savedInstanceState
+                    .getParcelableArrayList(EXTRA_REPOSITORIES));
 
+        }
+    }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
@@ -160,7 +165,6 @@ public class ReposFragment extends Fragment {
         if (status.getCode() == StatusCode.SUCCESS) {
             mLlLoading.setVisibility(View.GONE);
             mLvRepositories.setVisibility(View.VISIBLE);
-            refreshTable();
             return;
         }
         mLvRepositories.setVisibility(View.GONE);
@@ -173,18 +177,8 @@ public class ReposFragment extends Fragment {
         mFabCreateRepo.setVisibility(View.VISIBLE);
     }
 
-    // Инициализация таблицы репозиториев
-    private boolean refreshTable() {
-        if (mRepositories == null)
-            return false;
-        RepositoriesTableAdapter listAdapter = new RepositoriesTableAdapter(
-                mActivity, mRepositories);
-        mLvRepositories.setAdapter(listAdapter);
-        listAdapter.notifyDataSetChanged();
-        return true;
-    }
 
-    @OnMessage(from = ALL)
+   /* @OnMessage(from = ALL)
     public void onRequestComplete(WebAsync.RequestSuccess response) {
         if (mActivity == null)
             return;
@@ -214,33 +208,84 @@ public class ReposFragment extends Fragment {
                     .getString(R.string.error_unknown));
         }
         updateGUI(status);
-    }
+    }*/
 
-    @OnMessage
-    public void onRequestError(WebAsync.RequestError requestError) {
-        if (mActivity == null)
-            return;
-        updateGUI(new Status(StatusCode.ERROR, requestError.getMessage()));
-    }
 
     // Асинхронная загрузка репозиториев
-    private void refreshRepositories() {
+    private void fetchRepositories() {
+        Status status = new Status(StatusCode.LOADING,
+                getString(R.string.repositories_loading));
+        updateGUI(status);
         User user = Utils.GetUserInfo(mActivity);
-        webAsync.SendRequest(user, MethodName.GetRepositories, null);
+        ServerCommunicator communicator = App.inst().getCommunicator();
+        communicator.getRepos(user)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(getReposSubscriber);
+    }
+
+    private Subscriber<List<Repository>> getReposSubscriber = new Subscriber<List<Repository>>() {
+        @Override
+        public void onCompleted() {
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            String message = Utils.getErrorMessage(e);
+            updateGUI(new Status(StatusCode.ERROR, message));
+        }
+
+        @Override
+        public void onNext(List<Repository> repositories) {
+            refreshReposList(repositories);
+        }
+    };
+
+
+
+    private void refreshReposList(List<Repository> repositories) {
+        mRepositories.clear();
+        mRepositories.addAll(repositories);
+        mReposAdapter.notifyDataSetChanged();
+        updateGUI(new Status(StatusCode.SUCCESS, null));
     }
 
     // Асинхронный запрос на создание репозитория
     private void createRepo(Repository repo) {
         User user = Utils.GetUserInfo(mActivity);
-        webAsync.SendRequest(user, MethodName.CreateRepository, repo);
+        ServerCommunicator communicator = App.inst().getCommunicator();
+        communicator.createRepo(user, repo)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(createRepoSubscriber);
     }
+
+    private Subscriber<Repository> createRepoSubscriber = new Subscriber<Repository>() {
+        @Override
+        public void onCompleted() {
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            String message = Utils.getErrorMessage(e);
+            updateGUI(new Status(StatusCode.ERROR, message));
+        }
+
+        @Override
+        public void onNext(Repository repositorie) {
+            Toast.makeText(
+                    mActivity,
+                    getString(R.string.lbl_repo_create_success),
+                    Toast.LENGTH_SHORT).show();
+            fetchRepositories();
+        }
+    };
 
     // Открытие диалога создания репозитория
     private void openCreateDialog() {
-        boolean wrapInScrollView = true;
 
         MaterialDialog dialogCreate = new MaterialDialog.Builder(mActivity)
-                .customView(R.layout.dialog_create_repo, wrapInScrollView)
+                .customView(R.layout.dialog_create_repo, true)
                 .backgroundColorRes(R.color.md_white)
                 .positiveText(R.string.lbl_create)
                 .neutralText(R.string.lbl_cancel)
@@ -258,6 +303,8 @@ public class ReposFragment extends Fragment {
                         String name = txtName.getText().toString();
                         String description = txtDescription.getText()
                                 .toString();
+
+
                         createRepo(new Repository(name, description, null, "",
                                 0, 0));
                     }

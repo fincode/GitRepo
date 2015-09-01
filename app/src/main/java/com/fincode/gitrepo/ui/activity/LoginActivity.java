@@ -1,27 +1,26 @@
-package com.fincode.gitrepo.ui;
+package com.fincode.gitrepo.ui.activity;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.fincode.gitrepo.App;
 import com.fincode.gitrepo.R;
 import com.fincode.gitrepo.model.User;
-import com.fincode.gitrepo.model.enums.MethodName;
-import com.fincode.gitrepo.service.WebAsync;
+import com.fincode.gitrepo.network.ServerCommunicator;
 import com.fincode.gitrepo.ui.custom.AnimationButton;
 import com.fincode.gitrepo.ui.custom.TransparentProgressDialog;
 import com.fincode.gitrepo.utils.Utils;
-import com.joanzapata.android.asyncservice.api.annotation.InjectService;
-import com.joanzapata.android.asyncservice.api.annotation.OnMessage;
-import com.joanzapata.android.asyncservice.api.internal.AsyncService;
 
-import static com.joanzapata.android.asyncservice.api.annotation.OnMessage.Sender.ALL;
+import rx.Observable;
+import rx.Subscriber;
+import rx.android.widget.WidgetObservable;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 public class LoginActivity extends Activity {
 
@@ -34,14 +33,11 @@ public class LoginActivity extends Activity {
     public static long sBackPressed;
     static final String STATE_LOADING = "loading";
 
-    @InjectService
-    WebAsync webAsync;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        AsyncService.inject(this);
+        //AsyncService.inject(this);
 
         mTxtLogin = (EditText) findViewById(R.id.txtLoginName);
         mTxtPassword = (EditText) findViewById(R.id.txtLoginPassword);
@@ -50,11 +46,18 @@ public class LoginActivity extends Activity {
         pdLoading = new TransparentProgressDialog(
                 LoginActivity.this, R.drawable.spinner);
         mBtnEnter.setOnClickListener(v -> Auth());
-        mTxtLogin.addTextChangedListener(new GenericTextWatcher());
-        mTxtPassword.addTextChangedListener(new GenericTextWatcher());
+        mBtnEnter.setEnabled(false);
+
+        Observable<CharSequence> mLoginObs = WidgetObservable.text(mTxtLogin).map(e -> e.text());
+        Observable<CharSequence> mPassObs = WidgetObservable.text(mTxtPassword).map(e -> e.text());
+
+        Observable<Boolean> registerEnabled =
+                Observable.combineLatest(mLoginObs.map(t -> !t.toString().isEmpty()), mPassObs.map(t -> !t.toString().isEmpty()), (a, b) -> a && b);
+        registerEnabled.subscribe(enabled -> mBtnEnter.setEnabled(enabled));
 
         if (savedInstanceState != null && savedInstanceState.getBoolean(STATE_LOADING, false)) {
-            pdLoading.show();
+            if (!pdLoading.isShowing())
+                pdLoading.show();
             return;
         }
         // Загрузка сохраненных данных о пользователе
@@ -73,6 +76,7 @@ public class LoginActivity extends Activity {
         } else {
             Utils.RemoveUserInfo(this);
         }
+
     }
 
     @Override
@@ -87,24 +91,6 @@ public class LoginActivity extends Activity {
                 && !mTxtPassword.getText().toString().isEmpty();
     }
 
-    // Перехват события изменения текста логина/пароля
-    private class GenericTextWatcher implements TextWatcher {
-        @Override
-        public void beforeTextChanged(CharSequence s, int start, int count,
-                                      int after) {
-        }
-
-        @Override
-        public void onTextChanged(CharSequence s, int start, int before,
-                                  int count) {
-            mBtnEnter.setEnabled(isBtnEnabled());
-        }
-
-        @Override
-        public void afterTextChanged(Editable s) {
-        }
-    }
-
     // Вывод ошибки
     private void showError(String text) {
         mTxtError.setVisibility(View.VISIBLE);
@@ -117,46 +103,59 @@ public class LoginActivity extends Activity {
         pdLoading.show();
         User user = new User(mTxtLogin.getText().toString(), mTxtPassword
                 .getText().toString());
-        webAsync.SendRequest(user, MethodName.Auth, null);
+
+        ServerCommunicator communicator = App.inst().getCommunicator();
+        Observable<User> mObservableRequest = communicator.auth(user)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread());
+
+        mObservableRequest.subscribe(new Subscriber<User>() {
+                                         @Override
+                                         public void onCompleted() {
+                                         }
+
+                                         @Override
+                                         public void onError(Throwable e) {
+                                             if (pdLoading.isShowing())
+                                                 pdLoading.dismiss();
+                                             String message = Utils.getErrorMessage(e);
+                                             showError(message);
+                                         }
+
+                                         @Override
+                                         public void onNext(User user) {
+                                             loginSuccess(user);
+                                         }
+                                     }
+        );
+
     }
 
-    @OnMessage(from = ALL)
-    public void onRequestSuccess(WebAsync.RequestSuccess response) {
-        if (LoginActivity.this == null)
-            return;
+    private void loginSuccess(User user) {
         pdLoading.dismiss();
-        Object res = response.getObject();
-        if (res != null) {
-            if (res instanceof User) {
-                User user = (User) res;
-                user.setPassword(mTxtPassword.getText().toString());
-                // Сохранение данных о пользователе
-                if (Utils.SaveUser(LoginActivity.this, user)) {
-                    Intent intent = new Intent(LoginActivity.this,
-                            MainActivity.class);
-                    pdLoading.dismiss();
-                    startActivity(intent);
-                    finish();
-                    return;
-                } else
-                    showError(getString(R.string.error_save_user));
-            }
-        } else {
-            showError(getString(R.string.error_unknown));
-        }
+        user.setPassword(mTxtPassword.getText().toString());
+        // Сохранение данных о пользователе
+        if (Utils.SaveUser(LoginActivity.this, user)) {
+            Intent intent = new Intent(LoginActivity.this,
+                    MainActivity.class);
+            pdLoading.dismiss();
+            startActivity(intent);
+            finish();
+            return;
+        } else
+            showError(getString(R.string.error_save_user));
     }
 
-    @OnMessage(from = ALL)
-    public void onRequestError(WebAsync.RequestError requestError) {
-        if (LoginActivity.this == null)
-            return;
-        pdLoading.dismiss();
-        showError(requestError.getMessage());
+    @Override
+    public void onResume() {
+        super.onResume();
+
     }
 
     @Override
     public void onDestroy() {
-        AsyncService.unregister(this);
+        if (pdLoading.isShowing())
+            pdLoading.dismiss();
         super.onDestroy();
     }
 

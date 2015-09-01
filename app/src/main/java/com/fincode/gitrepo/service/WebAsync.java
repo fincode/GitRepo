@@ -34,7 +34,7 @@ public abstract class WebAsync implements EnhancedService {
     @Serial("CACHE")
     public RequestSuccess SendRequest(User user, MethodName method, Repository repo) {
         String sError = "";
-        Exception exception = null;
+        /*Exception exception = null;
         ServerCommunicator communicator = App.inst().getCommunicator();
         try {
             Object result = null;
@@ -82,7 +82,7 @@ public abstract class WebAsync implements EnhancedService {
             sError = context.getString(R.string.error_unknown);
             exception = e;
         }
-        send(new RequestError(sError, exception));
+        send(new RequestError(sError, exception));*/
         return null;
     }
 

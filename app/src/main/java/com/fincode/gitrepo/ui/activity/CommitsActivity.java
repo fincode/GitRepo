@@ -1,4 +1,4 @@
-package com.fincode.gitrepo.ui;
+package com.fincode.gitrepo.ui.activity;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -9,7 +9,9 @@ import android.widget.LinearLayout.LayoutParams;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.fincode.gitrepo.App;
 import com.fincode.gitrepo.R;
 import com.fincode.gitrepo.model.Commit;
 import com.fincode.gitrepo.model.Repository;
@@ -17,6 +19,7 @@ import com.fincode.gitrepo.model.Status;
 import com.fincode.gitrepo.model.User;
 import com.fincode.gitrepo.model.enums.MethodName;
 import com.fincode.gitrepo.model.enums.StatusCode;
+import com.fincode.gitrepo.network.ServerCommunicator;
 import com.fincode.gitrepo.service.WebAsync;
 import com.fincode.gitrepo.ui.adapter.CommitsTableAdapter;
 import com.fincode.gitrepo.utils.Utils;
@@ -28,26 +31,29 @@ import com.melnykov.fab.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
 
+import rx.Observable;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
+
 public class CommitsActivity extends Activity {
 
     public static final String EXTRA_REPO_NAME = "repo_name";
     public static final String EXTRA_OWNER_LOGIN = "owner_login";
 
-    private List<Commit> mCommits;
+    private List<Commit> mCommits = new ArrayList<>();
+    CommitsTableAdapter mAdapter;
+
     private ListView mLvCommits;
     private LinearLayout mLlLoading;
     private TextView mTxtLoading;
     private ProgressBar mPbLoading;
     private FloatingActionButton mFabClose;
 
-    @InjectService
-    WebAsync webAsync;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.fragment_repos);
-        AsyncService.inject(this);
 
         mLvCommits = (ListView) findViewById(R.id.lvRepositories);
         mLlLoading = (LinearLayout) findViewById(R.id.llRepositoriesLoading);
@@ -58,6 +64,13 @@ public class CommitsActivity extends Activity {
         mFabClose.setColorPressedResId(R.color.md_red_a700);
         mFabClose.setImageResource(R.drawable.btn_close);
         mFabClose.setOnClickListener(v -> finish());
+        mFabClose.attachToListView(mLvCommits);
+
+        initTableHeader();
+        mAdapter = new CommitsTableAdapter(this,
+                mCommits);
+        mLvCommits.setAdapter(mAdapter);
+
         // Извлечение данных о репозитории
         Bundle bundle = getIntent().getExtras();
         if (bundle != null) {
@@ -107,39 +120,9 @@ public class CommitsActivity extends Activity {
         mLvCommits.addHeaderView(header, null, false);
     }
 
-    @OnMessage
-    public void onRequestSuccess(WebAsync.RequestSuccess response) {
-        if (CommitsActivity.this == null)
-            return;
-        Status status = new Status();
-        status.setCode(StatusCode.SUCCESS);
-        Object res = response.getObject();
-        if (res != null) {
-            // Ответ является списком коммитов
-            if (res instanceof ArrayList<?>) {
-                List tmp = (ArrayList<?>) res;
-                if (tmp.size() > 0 && tmp.get(0) instanceof Commit)
-                    mCommits = tmp;
-            }
-        }
-        // Неизвестная ошибка
-        else {
-            status.setCode(StatusCode.ERROR);
-            status.setMessage(getString(R.string.error_unknown));
-        }
-        updateGUI(status);
-    }
-
-    @OnMessage
-    public void onRequestError(WebAsync.RequestError requestError) {
-        if (CommitsActivity.this == null)
-            return;
-        updateGUI(new Status(StatusCode.ERROR, requestError.getMessage()));
-    }
 
     @Override
     public void onDestroy() {
-        AsyncService.unregister(this);
         super.onDestroy();
     }
 
@@ -148,16 +131,39 @@ public class CommitsActivity extends Activity {
         Status status = new Status(StatusCode.LOADING,
                 getString(R.string.lbl_commits_loading));
         updateGUI(status);
-        webAsync.SendRequest(user, MethodName.GetCommits, repo);
+        ServerCommunicator communicator = App.inst().getCommunicator();
+
+        communicator.getCommits(user, repo)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(getCommitsSubscriber);
     }
+
+    private Subscriber<List<Commit>> getCommitsSubscriber = new Subscriber<List<Commit>>() {
+        @Override
+        public void onCompleted() {
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            String message = Utils.getErrorMessage(e);
+            updateGUI(new Status(StatusCode.ERROR, message));
+        }
+
+        @Override
+        public void onNext(List<Commit> commits) {
+            mCommits.clear();
+            mCommits.addAll(commits);
+            mAdapter.notifyDataSetChanged();
+            updateGUI(new Status(StatusCode.SUCCESS, null));
+        }
+    };
 
     // Обновление GUI
     public void updateGUI(Status status) {
         if (status.getCode() == StatusCode.SUCCESS) {
             mLlLoading.setVisibility(View.GONE);
             mLvCommits.setVisibility(View.VISIBLE);
-            initTableHeader();
-            refreshTable();
             return;
         }
         mLvCommits.setVisibility(View.GONE);
@@ -168,14 +174,4 @@ public class CommitsActivity extends Activity {
                         : View.GONE);
     }
 
-    // Инициализация таблицы
-    private boolean refreshTable() {
-        if (mCommits == null)
-            return false;
-        CommitsTableAdapter listAdapter = new CommitsTableAdapter(this,
-                mCommits);
-        mLvCommits.setAdapter(listAdapter);
-        listAdapter.notifyDataSetChanged();
-        return true;
-    }
 }

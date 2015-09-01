@@ -1,4 +1,4 @@
-package com.fincode.gitrepo.ui;
+package com.fincode.gitrepo.ui.activity;
 
 import java.util.List;
 
@@ -23,6 +23,7 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.fincode.gitrepo.R;
+import com.fincode.gitrepo.ui.fragment.ReposFragment;
 import com.fincode.gitrepo.ui.adapter.MenuListAdapter;
 import com.fincode.gitrepo.ui.custom.Dialogs;
 import com.fincode.gitrepo.ui.custom.DrawerHelper;
