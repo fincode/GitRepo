@@ -15,7 +15,7 @@ public class DialogsFabric {
 
 		return new MaterialDialog.Builder(context)
 				.customView(resId, wrapInScrollView)
-				.backgroundColorRes(R.color.md_white)
+				.backgroundColorRes(R.color.white)
 				.callback(new MaterialDialog.ButtonCallback() {
 					@Override
 					public void onPositive(MaterialDialog dialog) {

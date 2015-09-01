@@ -278,7 +278,7 @@ public class ReposFragment extends Fragment {
 
         MaterialDialog dialogCreate = new MaterialDialog.Builder(mActivity)
                 .customView(R.layout.dialog_create_repo, true)
-                .backgroundColorRes(R.color.md_white)
+                .backgroundColorRes(R.color.white)
                 .positiveText(R.string.lbl_create)
                 .neutralText(R.string.lbl_cancel)
                 .title(R.string.lbl_create_repo)

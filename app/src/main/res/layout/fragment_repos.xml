@@ -47,7 +47,7 @@
         android:id="@+id/lvRepositories"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:divider="@color/md_black"
+        android:divider="@color/black"
         android:dividerHeight="1dp"
         android:visibility="visible" />
 
