@@ -219,8 +219,29 @@ public class ReposFragment extends Fragment {
     private void createRepo(Repository repo) {
         User user = Utils.GetUserInfo(mActivity);
         ServerCommunicator communicator = App.inst().getCommunicator();
+        communicator.createRepo(user, repo)
+                .subscribeOn(Schedulers.io())
+                .flatMap(repository -> communicator.getRepos(user))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<List<Repository>>() {
+                    @Override
+                    public void onCompleted() {
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        String message = Utils.getErrorMessage(e);
+                        updateGUI(new Status(StatusCode.ERROR, message));
+                    }
+
+                    @Override
+                    public void onNext(List<Repository> repositories) {
+                        refreshReposList(repositories);
+                    }
+                });
+
         //communicator.createRepo(user, repo)
-        Observable.just(1)
+        /*Observable.just(1)
                     .subscribeOn(Schedulers.newThread())
                 .map(integer -> new Repository())
                 .doOnNext(new Action1<Repository>() {
@@ -241,7 +262,7 @@ public class ReposFragment extends Fragment {
                         return null;
                     }
                 })
-                .observeOn(AndroidSchedulers.mainThread());
+                .observeOn(AndroidSchedulers.mainThread());*/
     }
 
     private Subscriber<Repository> createRepoSubscriber = new Subscriber<Repository>() {
