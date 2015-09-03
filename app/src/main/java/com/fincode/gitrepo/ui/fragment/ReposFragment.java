@@ -184,8 +184,9 @@ public class ReposFragment extends Fragment {
         User user = Utils.GetUserInfo(mActivity);
         ServerCommunicator communicator = App.inst().getCommunicator();
 
-        communicator.getRepos(user)
+        Observable.just("")
                 .subscribeOn(Schedulers.newThread())
+                .flatMap(Integer -> communicator.getRepos(user))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(getReposSubscriber);
     }
@@ -219,8 +220,9 @@ public class ReposFragment extends Fragment {
     private void createRepo(Repository repo) {
         User user = Utils.GetUserInfo(mActivity);
         ServerCommunicator communicator = App.inst().getCommunicator();
-        communicator.createRepo(user, repo)
-                .subscribeOn(Schedulers.io())
+        Observable.just("")
+                .subscribeOn(Schedulers.newThread())
+                .flatMap(empty -> communicator.createRepo(user, repo))
                 .flatMap(repository -> communicator.getRepos(user))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Subscriber<List<Repository>>() {
@@ -239,30 +241,6 @@ public class ReposFragment extends Fragment {
                         refreshReposList(repositories);
                     }
                 });
-
-        //communicator.createRepo(user, repo)
-        /*Observable.just(1)
-                    .subscribeOn(Schedulers.newThread())
-                .map(integer -> new Repository())
-                .doOnNext(new Action1<Repository>() {
-                    @Override
-                    public void call(Repository repository) {
-                        mRepositories.clear();
-                        mReposAdapter.notifyDataSetChanged();
-                    }
-                })
-                .flatMap(repository -> Observable.just(repository))
-                .flatMap(repository1 -> communicator.getRepos(user))
-                .flatMap(repos -> Observable.from(repos))
-                .map(new Func1<Repository, Object>() {
-                    @Override
-                    public Object call(Repository repository) {
-                        mRepositories.add(repository);
-                        mReposAdapter.notifyDataSetChanged();
-                        return null;
-                    }
-                })
-                .observeOn(AndroidSchedulers.mainThread());*/
     }
 
     private Subscriber<Repository> createRepoSubscriber = new Subscriber<Repository>() {

@@ -105,8 +105,9 @@ public class LoginActivity extends Activity {
                 .getText().toString());
 
         ServerCommunicator communicator = App.inst().getCommunicator();
-        Observable<User> mObservableRequest = communicator.auth(user)
+        Observable<User> mObservableRequest =  Observable.just("")
                 .subscribeOn(Schedulers.newThread())
+                .flatMap(empty -> communicator.auth(user))
                 .observeOn(AndroidSchedulers.mainThread());
 
         mObservableRequest.subscribe(new Subscriber<User>() {
