@@ -11,7 +11,7 @@
     android:paddingRight="@dimen/activity_horizontal_margin" >
 
     <ImageView
-        android:id="@+id/imgLoginLogo"
+        android:id="@+id/img_login_logo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="@dimen/activity_vertical_margin"
@@ -29,7 +29,7 @@
         android:paddingTop="@dimen/activity_vertical_margin" >
 
         <EditText
-            android:id="@+id/txtLoginName"
+            android:id="@+id/et_login_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
@@ -41,7 +41,7 @@
             android:textColorHint="@color/md_grey_500" />
 
         <EditText
-            android:id="@+id/txtLoginPassword"
+            android:id="@+id/et_login_password"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/activity_vertical_half_margin"
@@ -52,7 +52,7 @@
             android:textColorHint="@color/md_grey_500" />
 
         <com.fincode.gitrepo.ui.custom.AnimationButton
-            android:id="@+id/btnLoginEnter"
+            android:id="@+id/btn_login_enter"
             style="?android:attr/borderlessButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

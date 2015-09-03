@@ -36,8 +36,14 @@ import com.melnykov.fab.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
 
+import rx.Observable;
+import rx.Observer;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.android.widget.WidgetObservable;
+import rx.functions.Action1;
+import rx.functions.Func1;
+import rx.observers.Observers;
 import rx.schedulers.Schedulers;
 
 // Фрагмент, отображающий список репозиториев
@@ -98,6 +104,7 @@ public class ReposFragment extends Fragment {
                 mActivity, mRepositories);
         mLvRepositories.setAdapter(mReposAdapter);
 
+        setRetainInstance(true);
         return rootView;
     }
 
@@ -169,40 +176,6 @@ public class ReposFragment extends Fragment {
         mFabCreateRepo.setVisibility(View.VISIBLE);
     }
 
-
-   /* @OnMessage(from = ALL)
-    public void onRequestComplete(WebAsync.RequestSuccess response) {
-        if (mActivity == null)
-            return;
-        Status status = new Status();
-        status.setCode(StatusCode.SUCCESS);
-        Object res = response.getObject();
-        if (res != null) {
-            // Получение репозиториев
-            if (res instanceof ArrayList<?>) {
-                List tmp = (ArrayList<?>) res;
-                if (tmp.size() > 0 && tmp.get(0) instanceof Repository)
-                    mRepositories = tmp;
-            }
-            // Создание репозитория
-            else if (res instanceof Repository) {
-                Toast.makeText(
-                        mActivity,
-                        getString(R.string.lbl_repo_create_success),
-                        Toast.LENGTH_SHORT).show();
-                refreshRepositories();
-            }
-        }
-        // Неизвестная ошибка
-        else {
-            status.setCode(StatusCode.ERROR);
-            status.setMessage(mActivity
-                    .getString(R.string.error_unknown));
-        }
-        updateGUI(status);
-    }*/
-
-
     // Асинхронная загрузка репозиториев
     private void fetchRepositories() {
         Status status = new Status(StatusCode.LOADING,
@@ -210,6 +183,7 @@ public class ReposFragment extends Fragment {
         updateGUI(status);
         User user = Utils.GetUserInfo(mActivity);
         ServerCommunicator communicator = App.inst().getCommunicator();
+
         communicator.getRepos(user)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -234,7 +208,6 @@ public class ReposFragment extends Fragment {
     };
 
 
-
     private void refreshReposList(List<Repository> repositories) {
         mRepositories.clear();
         mRepositories.addAll(repositories);
@@ -246,10 +219,29 @@ public class ReposFragment extends Fragment {
     private void createRepo(Repository repo) {
         User user = Utils.GetUserInfo(mActivity);
         ServerCommunicator communicator = App.inst().getCommunicator();
-        communicator.createRepo(user, repo)
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(createRepoSubscriber);
+        //communicator.createRepo(user, repo)
+        Observable.just(1)
+                    .subscribeOn(Schedulers.newThread())
+                .map(integer -> new Repository())
+                .doOnNext(new Action1<Repository>() {
+                    @Override
+                    public void call(Repository repository) {
+                        mRepositories.clear();
+                        mReposAdapter.notifyDataSetChanged();
+                    }
+                })
+                .flatMap(repository -> Observable.just(repository))
+                .flatMap(repository1 -> communicator.getRepos(user))
+                .flatMap(repos -> Observable.from(repos))
+                .map(new Func1<Repository, Object>() {
+                    @Override
+                    public Object call(Repository repository) {
+                        mRepositories.add(repository);
+                        mReposAdapter.notifyDataSetChanged();
+                        return null;
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     private Subscriber<Repository> createRepoSubscriber = new Subscriber<Repository>() {
@@ -314,22 +306,11 @@ public class ReposFragment extends Fragment {
         btnDialogPositive.setEnabled(false);
 
         // Enable/disable кнопки "Создать"
-        txtName.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count,
-                                          int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before,
-                                      int count) {
-                btnDialogPositive.setEnabled(!s.toString().isEmpty());
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-            }
-        });
+        WidgetObservable
+                .text(txtName)
+                .map(e -> e.text())
+                .map(repoName -> !repoName.toString().isEmpty())
+                .subscribe(enabled -> btnDialogPositive.setEnabled(enabled));
         dialogCreate.show();
     }
 }

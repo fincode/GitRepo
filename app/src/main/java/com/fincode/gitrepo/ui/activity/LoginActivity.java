@@ -39,9 +39,9 @@ public class LoginActivity extends Activity {
         setContentView(R.layout.activity_login);
         //AsyncService.inject(this);
 
-        mTxtLogin = (EditText) findViewById(R.id.txtLoginName);
-        mTxtPassword = (EditText) findViewById(R.id.txtLoginPassword);
-        mBtnEnter = (AnimationButton) findViewById(R.id.btnLoginEnter);
+        mTxtLogin = (EditText) findViewById(R.id.et_login_name);
+        mTxtPassword = (EditText) findViewById(R.id.et_login_password);
+        mBtnEnter = (AnimationButton) findViewById(R.id.btn_login_enter);
         mTxtError = (TextView) findViewById(R.id.txtLoginError);
         pdLoading = new TransparentProgressDialog(
                 LoginActivity.this, R.drawable.spinner);
